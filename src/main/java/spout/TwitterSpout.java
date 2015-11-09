@@ -1,4 +1,4 @@
-package cs535.spout;
+package spout;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -17,21 +17,17 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class TwitterSpout extends BaseRichSpout {
 
-    public static String consumerKey = "";
-    public static String consumerSecret = "";
-    public static String accessToken = "";
-    public static String accessTokenSecret = "";
+    public static final String consumerKey = "n4yQ2ltlZ7VBlNbYj217JYDIj";
+    public static final String consumerSecret = "0BFeKPqo4ssB91Hlu9X0gxhH4Hj7JrZNN0IHXW3MXZCHejTOdn";
+    public static final String accessToken = "353264724-pFaJBAR5sWacJKEyATOcrFC7WV2HAmX6QxBUlBNd";
+    public static final String accessTokenSecret = "A14UR52qk8OUzjPynZHodlitJ06IOyi7kZA3HSqI9qNUk";
 
     private SpoutOutputCollector collector;
     private TwitterStream twStream;
     private FilterQuery tweetFilterQuery;
     private LinkedBlockingQueue msgs;
 
-    public TwitterSpout(String ck, String cs, String at, String as) {
-        consumerKey = ck;
-        consumerSecret = cs;
-        accessToken = at;
-        accessTokenSecret = as;
+    public TwitterSpout() {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
@@ -45,7 +41,8 @@ public class TwitterSpout extends BaseRichSpout {
         confBuilder.setOAuthConsumerKey(consumerKey)
                 .setOAuthConsumerSecret(consumerSecret)
                 .setOAuthAccessToken(accessToken)
-                .setOAuthAccessTokenSecret(accessTokenSecret);
+                .setOAuthAccessTokenSecret(accessTokenSecret)
+                .setJSONStoreEnabled(true);
         twStream = new TwitterStreamFactory(confBuilder.build()).getInstance();
         twStream.addListener(new StatusListener() {
             public void onStatus(Status status) {
