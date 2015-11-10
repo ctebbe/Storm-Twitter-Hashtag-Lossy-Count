@@ -2,7 +2,8 @@ import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.Utils;
-import bolts.FileWriterBolt;
+import bolts.HashtagExtractBolt;
+import bolts.HashtagLogBolt;
 import spout.TwitterSpout;
 import twitter4j.FilterQuery;
 
@@ -17,11 +18,12 @@ public class MainTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TwitterSpout(filter));
-        builder.setBolt("file-writer", new FileWriterBolt("tweets.txt"), 1).shuffleGrouping("spout");
+
+        builder.setBolt("hashtags", new HashtagExtractBolt(), 1).shuffleGrouping("spout");
+        builder.setBolt("log", new HashtagLogBolt("hashtags.log"), 1).shuffleGrouping("hashtags");
 
         Config conf = new Config();
         conf.setDebug(true);
-        conf.setMaxTaskParallelism(3);
 
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("twitter", conf, builder.createTopology());
