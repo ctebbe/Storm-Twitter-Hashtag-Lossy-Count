@@ -6,6 +6,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import backtype.storm.utils.Utils;
 import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;
 
@@ -27,7 +28,8 @@ public class TwitterSpout extends BaseRichSpout {
     private FilterQuery tweetFilterQuery;
     private LinkedBlockingQueue msgs;
 
-    public TwitterSpout() {
+    public TwitterSpout(FilterQuery fq) {
+        this.tweetFilterQuery = fq;
     }
 
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
@@ -42,7 +44,7 @@ public class TwitterSpout extends BaseRichSpout {
                 .setOAuthConsumerSecret(consumerSecret)
                 .setOAuthAccessToken(accessToken)
                 .setOAuthAccessTokenSecret(accessTokenSecret)
-                .setJSONStoreEnabled(true);
+                ;//.setJSONStoreEnabled(true);
         twStream = new TwitterStreamFactory(confBuilder.build()).getInstance();
         twStream.addListener(new StatusListener() {
             public void onStatus(Status status) {
@@ -79,7 +81,7 @@ public class TwitterSpout extends BaseRichSpout {
     public void nextTuple() {
         Object s = msgs.poll();
         if(s == null) {
-            //sleep
+            Utils.sleep(1000);
         } else {
             collector.emit(new Values(s));
         }

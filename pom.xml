@@ -14,7 +14,7 @@
             <artifactId>storm-core</artifactId>
             <version>0.9.5</version>
             <!-- keep storm out of the jar-with-dependencies -->
-            <!--<scope>provided</scope> -->
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.twitter4j</groupId>
