@@ -1,9 +1,12 @@
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 import bolts.HashtagExtractBolt;
-import bolts.LogBolt;
+import bolts.HashtagsExtractLogBolt;
+import bolts.LossyCountingAggregatorBolt;
+import bolts.LossyCountingAlgorithmBolt;
 import spout.TwitterSpout;
 import twitter4j.FilterQuery;
 
@@ -18,17 +21,18 @@ public class MainTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TwitterSpout(filter));
+        builder.setBolt("log", new HashtagsExtractLogBolt("hashtags.log")).shuffleGrouping("spout");
 
-        builder.setBolt("hashtags", new HashtagExtractBolt(), 1).shuffleGrouping("spout");
-        builder.setBolt("log", new LogBolt("hashtags.log"), 1).shuffleGrouping("hashtags");
+        builder.setBolt("hashtag", new HashtagExtractBolt()).shuffleGrouping("spout");
+        builder.setBolt("lossy-algo", new LossyCountingAlgorithmBolt(0.2), 1).fieldsGrouping("hashtag", new Fields("hashtag"));
+        builder.setBolt("aggregator", new LossyCountingAggregatorBolt(100)).globalGrouping("lossy-algo");
 
         Config conf = new Config();
         conf.setDebug(true);
-
         LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("twitter", conf, builder.createTopology());
 
-        Utils.sleep(30000);
+        cluster.submitTopology("twitter", conf, builder.createTopology());
+        Utils.sleep(50000);
         cluster.shutdown();
     }
 }

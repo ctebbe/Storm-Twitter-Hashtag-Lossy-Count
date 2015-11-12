@@ -1,14 +1,12 @@
 package bolts;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseBasicBolt;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
+import data.LossyCountingDataStructure;
 import util.Util;
 
 import java.util.Map;
@@ -18,37 +16,32 @@ import java.util.Map;
  */
 public class LossyCountingAlgorithmBolt extends BaseBasicBolt {
 
-    private int n;
-    private double e;
-    OutputCollector collector;
+    private final LossyCountingDataStructure buckets;
 
     public LossyCountingAlgorithmBolt(double e) {
-        this.e = e;
-        this.n = 0;
+        buckets = new LossyCountingDataStructure((int) (1/e));
     }
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
         if(Util.isTickTuple(tuple)) {
-            emitFreqs(basicOutputCollector);
+            emitResults(basicOutputCollector);
         } else {
-
+            buckets.insert(tuple.getStringByField("hashtag"));
         }
     }
 
-    private void emitFreqs(BasicOutputCollector collector) {
-
+    private void emitResults(BasicOutputCollector collector) {
+        collector.emit(new Values(buckets.getResults()));
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("hashtag", "frequency", "delta"));
+        outputFieldsDeclarer.declare(new Fields("results"));
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        Config conf = new Config();
-        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 10);
-        return conf;
+        return Util.getEmitFrequencyConfig();
     }
 }

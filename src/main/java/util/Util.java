@@ -6,7 +6,6 @@ import backtype.storm.tuple.Tuple;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * Created by ctebbe
@@ -20,5 +19,11 @@ public class Util {
     public static boolean isTickTuple(Tuple tuple) {
         return tuple.getSourceComponent().equals(Constants.SYSTEM_COMPONENT_ID)
             && tuple.getSourceStreamId().equals(Constants.SYSTEM_TICK_STREAM_ID);
+    }
+
+    public static Config getEmitFrequencyConfig() {
+        Config conf = new Config();
+        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 10);
+        return conf;
     }
 }

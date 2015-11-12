@@ -4,11 +4,13 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
 import org.apache.commons.lang.StringUtils;
+import util.Util;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -17,11 +19,24 @@ import java.util.StringTokenizer;
  */
 public class HashtagsExtractLogBolt extends BaseRichBolt {
 
+    PrintWriter writer;
+    private final String filename;
     private OutputCollector collector;
+
+    public HashtagsExtractLogBolt(String filename) {
+        this.filename = filename;
+    }
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         collector = outputCollector;
+        try {
+            writer = new PrintWriter(filename,"UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -31,16 +46,23 @@ public class HashtagsExtractLogBolt extends BaseRichBolt {
         StringBuilder sb = new StringBuilder();
         while(st.hasMoreElements()) {
             String tmp = (String) st.nextElement();
-            if(StringUtils.startsWith(tmp, "#")) {
+            if(StringUtils.startsWith(tmp, "#")) { // extract hashtags
                 sb.append(tmp);
             }
         }
-        collector.emit(new Values(sb.toString()));
+        if(sb.length() > 0) {
+            writer.println(Util.getTimeStamp() +":"+ sb.toString());
+            writer.flush();
+        }
         collector.ack(tuple);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("hashtag"));
+    }
+
+    public void cleanup() {
+        writer.close();
+        super.cleanup();
     }
 }

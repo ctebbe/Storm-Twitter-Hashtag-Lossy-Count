@@ -1,14 +1,17 @@
 package bolts;
 
 import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseBasicBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import data.LossyCountingElement;
 import util.Util;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,31 +19,41 @@ import java.util.Map;
  */
 public class LossyCountingAggregatorBolt extends BaseBasicBolt {
 
-    private int n;
-    private double e;
-    OutputCollector collector;
+    private final int topN;
+    private int n = 0;
 
-    public LossyCountingAggregatorBolt(double e) {
-        this.e = e;
-        this.n = 0;
+    public LossyCountingAggregatorBolt(int topN) {
+        this.topN = topN;
     }
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
+        List<LossyCountingElement> elements = (List<LossyCountingElement>) tuple.getValueByField("results");
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter((n++) + "top_tweets.txt","UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        writer.println(elements.toString());
+        writer.flush();
+        writer.close();
+
         if(Util.isTickTuple(tuple)) {
-            emitFreqs(basicOutputCollector);
+            writeResults(basicOutputCollector);
         } else {
 
         }
     }
 
-    private void emitFreqs(BasicOutputCollector collector) {
+    private void writeResults(BasicOutputCollector collector) {
 
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("hashtag", "frequency", "delta"));
     }
 
     @Override
