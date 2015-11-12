@@ -1,5 +1,7 @@
 package bolts;
 
+import backtype.storm.Config;
+import backtype.storm.Constants;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -10,10 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -46,9 +45,32 @@ public class HashtagLogBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        String timestamp = new SimpleDateFormat("HH.mm.ss").format(new Date());
-        recordHashTag(timestamp, tuple.getStringByField("hashtag"));
-        collector.ack(tuple);
+        String hashtag = tuple.getStringByField("hashtag").toLowerCase();
+        String timestamp = new SimpleDateFormat("HH:mm:ss:SS").format(new Date());
+        System.out.println("***NOT TICK***");
+        try {
+            if(isTickTuple(tuple)) { // emit counts
+                System.out.println("***TICK***");
+            } else {
+                recordHashTag(timestamp, hashtag);
+                collector.ack(tuple);
+            }
+        } catch (Exception e) {
+            collector.reportError(e);
+        }
+    }
+
+    protected static boolean isTickTuple(Tuple tuple) {
+        return tuple != null
+            && tuple.getSourceComponent().equals(Constants.SYSTEM_COMPONENT_ID)
+            && tuple.getSourceStreamId().equals(Constants.SYSTEM_TICK_STREAM_ID);
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        Config conf = new Config();
+        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 10);
+        return conf;
     }
 
     private void recordHashTag(String timestamp, String hashtag) {
@@ -70,6 +92,7 @@ public class HashtagLogBolt extends BaseRichBolt {
             sb.append(entry.getKey() + "\t");
             for(String ts : entry.getValue())
                 sb.append(ts+"; ");
+            sb.append("\n");
             writer.print(sb.toString());
         }
         writer.flush();

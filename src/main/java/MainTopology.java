@@ -28,7 +28,7 @@ public class MainTopology {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("twitter", conf, builder.createTopology());
 
-        Utils.sleep(10000);
+        Utils.sleep(30000);
         cluster.shutdown();
     }
 }
