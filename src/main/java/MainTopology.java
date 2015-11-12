@@ -3,7 +3,7 @@ import backtype.storm.LocalCluster;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.Utils;
 import bolts.HashtagExtractBolt;
-import bolts.HashtagLogBolt;
+import bolts.LogBolt;
 import spout.TwitterSpout;
 import twitter4j.FilterQuery;
 
@@ -20,7 +20,7 @@ public class MainTopology {
         builder.setSpout("spout", new TwitterSpout(filter));
 
         builder.setBolt("hashtags", new HashtagExtractBolt(), 1).shuffleGrouping("spout");
-        builder.setBolt("log", new HashtagLogBolt("hashtags.log"), 1).shuffleGrouping("hashtags");
+        builder.setBolt("log", new LogBolt("hashtags.log"), 1).shuffleGrouping("hashtags");
 
         Config conf = new Config();
         conf.setDebug(true);

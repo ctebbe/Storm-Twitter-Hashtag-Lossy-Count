@@ -1,17 +1,21 @@
 package data;
 
+import com.google.common.collect.Lists;
+
+import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by ctebbe
  */
-public class LossyCountingBuckets {
+public class LossyCountingBuckets implements Serializable {
 
     private int n;
     private int currBucket;
     private int sizeBucket;
-    private final Map<String, LossyCountingElement> buckets = new HashMap<>();
+    private final List<LossyCountingElement> bucket = Lists.newArrayList();
 
     public LossyCountingBuckets(int size) {
         sizeBucket = size;
@@ -20,30 +24,39 @@ public class LossyCountingBuckets {
     }
 
     public void insert(String element) {
-        if(buckets.containsKey(element))
-            buckets.get(element).increment();
-        else
-            buckets.put(element, new LossyCountingElement(element, currBucket-1));
-
+        findOrInsert(element);
         if(++n % sizeBucket == 0) { // bucket is full
             deletePhase();
             currBucket++;
         }
     }
 
+    private void findOrInsert(String hashtag) {
+        LossyCountingElement element = null;
+        for(LossyCountingElement e : bucket) {
+            if(e.element.equalsIgnoreCase(hashtag)) {
+                element = e;
+            }
+        }
+        if(element == null)
+            element = new LossyCountingElement(hashtag, currBucket-1);
+        bucket.add(element);
+    }
+
     /*
         remove elements that satisfy freq + delta <= currBucket
      */
     private void deletePhase() {
-        for(Map.Entry<String, LossyCountingElement> entry : buckets.entrySet()) {
-            if(entry.getValue().frequency + entry.getValue().delta <= currBucket)
-                buckets.remove(entry.getKey());
+        for(LossyCountingElement e : bucket) {
+            if(e.frequency + e.delta <= currBucket)
+                bucket.remove(e);
         }
     }
 
-    public String getResults() {
-        buckets.clear();
-        return null;
+    public List<LossyCountingElement> getResults() {
+        List<LossyCountingElement> l = Lists.newArrayList(bucket);
+        bucket.clear();
+        return l;
     } 
 
     public static void main(String[] args) {
