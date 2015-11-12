@@ -28,7 +28,7 @@ public class LossyCountingAggregatorBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
-        List<LossyCountingElement> elements = (List<LossyCountingElement>) tuple.getValueByField("results");
+        //List<LossyCountingElement> elements = (List<LossyCountingElement>) tuple.getValueByField("results");
         PrintWriter writer = null;
         try {
             writer = new PrintWriter((n++) + "top_tweets.txt","UTF-8");
@@ -37,7 +37,7 @@ public class LossyCountingAggregatorBolt extends BaseBasicBolt {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        writer.println(elements.toString());
+        writer.println(tuple);
         writer.flush();
         writer.close();
 
